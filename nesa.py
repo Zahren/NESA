@@ -23,9 +23,9 @@ class Loader:
 	
         self.subreddit_name = subreddit_name
         self.year = str(year)
-		if int(month) < 10:
-			month = '0' + str(int(month))
-		self.month = month
+        if int(month) < 10:
+            month = '0' + str(int(month))
+        self.month = month
         self.amount = str(int(amount))
         self.client = client
 		
@@ -143,7 +143,7 @@ class SentimentAnalysisController:
         #Progress timer setup
         total_comments = len(comments)
         i = 1
-        j = 1
+        j = 0
         start_time = time.time()
         time_increment = 60
         
@@ -165,24 +165,28 @@ class SentimentAnalysisController:
                 elapsed_time = round((time.time() - start_time)/60, 1)
                 eta = round((total_comments - i)*(elapsed_time/i), 1)
                 percentage = round(100*float(i)/total_comments, 1)
-                print(str(percentage) + "% complete, elapsed " + str(elapsed_time) + "m, ETA. " + str(eta) + "m")
+                print(str(percentage) + '% complete, elapsed time ' + str(elapsed_time) + 'm, ETA. ' + str(eta) + 'm')
             i+=1
+            
+            
+        final_time = round((time.time() - start_time)/60, 1)
+        print('Analysis complete... elapsed time ' + str(final_time) + 'm')
                     
     def scores(self):
         return self.entity_sentiments
 
 def quick_run(subreddit, year, month, comment_amount, json_service_account, stanford_path):
-	"""A quick run of the sentiment analysis system on reddit
-	
-	subreddit - name of the subreddit you want to pull comments from
-	year - year the comments were published
-	comment_amount - amount of comments you wish to look at
-	json_service_account - path to a json google service account file
-	stanford_path - path to the StanfordCoreNLP library
-	
-	The system leverages NLTK, StanfordCoreNLP, and BigQuery to perform
-	entity recognition and rudimentary sentiment analysis on those entities.
-	"""
+    """A quick run of the sentiment analysis system on reddit
+    
+    subreddit - name of the subreddit you want to pull comments from
+    year - year the comments were published
+    comment_amount - amount of comments you wish to look at
+    json_service_account - path to a json google service account file
+    stanford_path - path to the StanfordCoreNLP library
+    
+    The system leverages NLTK, StanfordCoreNLP, and BigQuery to perform
+    entity recognition and rudimentary sentiment analysis on those entities.
+    """
 	
     #Load the comment
     print('Loading comments...')
@@ -198,5 +202,6 @@ def quick_run(subreddit, year, month, comment_amount, json_service_account, stan
     print('Starting analysis controller...')
     analysis = SentimentAnalysisController(recognition_engine, sentiment_engine
                                            ,loader.output_list())
+    print('Analysis complete...')
 	
-	return analysis.scores()
+    return analysis.scores()
