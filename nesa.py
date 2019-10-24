@@ -29,7 +29,7 @@ class Loader:
         self.amount = str(int(amount))
         self.client = client
 		
-		#Run the a query on bigquery to retrieve the comments
+        # Run the a query on bigquery to retrieve the comments
         self.query()
     
     def query(self):
@@ -59,14 +59,14 @@ class EntityRecognizer(RecognizerABC):
         
     def __extract_entities__(self, text):
         
-        #Get the entities in a raw format
+        # Get the entities in a raw format
         try:
             sentences = nltk.sent_tokenize(text)
         except:
             print(text)
         tagged_sentences = [self.stanford_nlp.ner(sentence) for sentence in sentences]
         
-        #Return a list of the entities found
+        # Return a list of the entities found
         entities = [pair[0]
             for tagged_sentence in tagged_sentences
             for pair in tagged_sentence if pair[1] in ('PERSON', 'LOCATION', 'ORGANIZATION')]
@@ -75,10 +75,6 @@ class EntityRecognizer(RecognizerABC):
         
     def __append_entities__(self, entities):
         self.entities.update(entities)
-        
-    def process_text(self, text):
-        entities = self.__extract_entities__(text)
-        return entities
     
     def done(self):
         self.stanford_nlp.close()
@@ -89,6 +85,8 @@ class SentimentAnalyzer(AnalyzerABC):
     def __init__(self, core_nlp_server):
         self.core_nlp_server = core_nlp_server
         self.props = {'annotators': 'sentiment'}
+        
+        # Map from underlying engine tags to list indices
         self.class_mapper = {'verynegative': 0
                              ,'negative': 1
                              ,'neutral': 2
@@ -117,20 +115,36 @@ class SentimentAnalyzer(AnalyzerABC):
         return self.class_mapper
         
 class SentimentAnalysisController:
+    """Chains entity recognition and semantic analysis together.
+    
+    Takes the given entity recognition system, sentiment analysis system, and
+    a list of text snippets and aggregates sentiment scores for
+    each entity found.
+    """
     
     def __init__(self, recognition_engine, sentiment_engine, comments):
         
         try:
             self.recognizer = recognition_engine
             self.analyzer = sentiment_engine
+            
+            # Define how sentiment engine scores are translated from strings to numbers
             self.class_mapper = self.analyzer.mapper()
+            
+            # Define a standard bin to tally scores into
             default_list = [0]*len(self.class_mapper.keys())
+            
+            # Define defaul dict with the standard bin
             self.entity_sentiments = defaultdict(lambda: default_list)
+            
+            # Run the process
             self.__create_mapping__(comments)
         except:
             print_exc()
             
     def __add_sentiment_score__(self, entity, score):
+        """Add the score to the entities dictionary entry."""
+        
         entity_lowered = entity.lower()
         current_score = self.entity_sentiments[entity_lowered]
         new_score = list(map(add, current_score, score))
@@ -140,7 +154,7 @@ class SentimentAnalysisController:
         
         print('Starting analysis...')
         
-        #Progress timer setup
+        # Progress timer setup
         total_comments = len(comments)
         i = 1
         j = 0
@@ -149,7 +163,7 @@ class SentimentAnalysisController:
         
         for comment in comments:
             
-            #Entity analyzer
+            # Entity analyzer
             try:
                 entities = self.recognizer.process_text(comment)
                 if len(entities) > 0:
@@ -159,7 +173,7 @@ class SentimentAnalysisController:
             except:
                 print('Issue encountered when mapping comment starting with "' + comment[:20] + '..."')
             
-            #Progress timer
+            # Progress timer
             if time.time() - start_time >= time_increment*j:
                 j+=1
                 elapsed_time = round((time.time() - start_time)/60, 1)
@@ -188,17 +202,17 @@ def quick_run(subreddit, year, month, comment_amount, json_service_account, stan
     entity recognition and rudimentary sentiment analysis on those entities.
     """
 	
-    #Load the comment
+    # Load the comment
     print('Loading comments...')
     client = GClient(json_service_account)
     loader = Loader(subreddit, year, month, comment_amount, client.client)
     
-    #Setup underlying systems
+    # Setup underlying systems
     stanford_nlp = StanfordCoreNLP(stanford_path, memory = '8g')
     recognition_engine = EntityRecognizer(stanford_nlp)
     sentiment_engine = SentimentAnalyzer(stanford_nlp)
     
-    #Perform analysis
+    # Perform analysis
     print('Starting analysis controller...')
     analysis = SentimentAnalysisController(recognition_engine, sentiment_engine
                                            ,loader.output_list())

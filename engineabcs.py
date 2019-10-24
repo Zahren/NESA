@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 class RecognizerABC(ABC):
-    """Interface definition for entity recognizer modules."""
+    """Abstract class for entity recognizer modules."""
     
     @abstractmethod
     def __extract_entities__(self, text):
@@ -27,7 +27,7 @@ class RecognizerABC(ABC):
         return entities
 
 class AnalyzerABC(ABC):
-    """Interface definition for sentiment analysis modules."""
+    """Abstract class for sentiment analysis modules."""
     
     @abstractmethod
     def __score_text__(self, text):
