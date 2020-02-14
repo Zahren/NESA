@@ -29,7 +29,7 @@ class Loader:
         self.amount = str(int(amount))
         self.client = client
 		
-        # Run the a query on bigquery to retrieve the comments
+        # Run a query on bigquery to retrieve the comments
         self.query()
     
     def query(self):
